@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Lista Filmova</title>
+    <meta charset="UTF-8"/>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.1/angular.min.js"></script>
+    <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.6.1/angular-resource.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <link rel="stylesheet" href="../static/bootstrap.css" th:href="@{/bootstrap.css}"/>
+    <script src="../static/bootstrap.js" th:src="@{/bootstrap.js}"></script>
+    <script>
+
+        var filmApp = angular.module("filmApp", ['ngResource']);
+
+        filmApp.controller("FilmController", ['$scope', '$resource',
+            function ($scope, $resource) {
+                var Filmovi = $resource('/filmovi');
+                var ListaZanrova = $resource('/zanrovi');
+
+                $scope.deleteFilm = function (id) {
+                    var FilmDelete = $resource('/filmovi/delete/' + id);
+                    FilmDelete.delete(function (response) {
+                        $scope.message = response.message;
+                        location.reload();
+                    });
+                }
+
+                $scope.editFilm = function (film) {
+                    var dataObject4Edit = {
+                        naziv: film.naziv,
+                        godina: film.godina,
+                        ocena: film.ocena,
+                        trajanje: film.trajanje,
+                        imdbLink: film.imdbLink,
+                        zanr: {
+                            id: film.zanr.id,
+                            naziv: film.zanr.naziv
+                        }
+                    };
+
+                    return $resource('/filmovi/edit', null,
+                        {
+                            'update': {method: 'PUT'}
+                        }).update(dataObject4Edit, film);
+                }
+
+
+                $scope.newFilm = function () {
+                    var FilmSave = $resource('/filmovi/create');
+                    var dataObject = {
+                        naziv: $scope.filmNovi.nazivNovi,
+                        godina: $scope.filmNovi.godinaNovi,
+                        ocena: $scope.filmNovi.ocenaNovi,
+                        trajanje: $scope.filmNovi.trajanjeNovi,
+                        imdbLink: $scope.filmNovi.imdblinkNovi
+                    };
+
+
+                    FilmSave.save(dataObject, function (response) {
+                        $scope.message = response.message;
+                        location.reload();
+                    })
+
+                }
+
+
+                Filmovi.query(function (filmovi) {
+                    $scope.filmovi = filmovi;
+                });
+
+
+                ListaZanrova.query(function (zanrFilm) {
+                    $scope.zanrFilm = zanrFilm;
+                });
+
+                $scope.go = function (path) {
+                    $location.path(path);
+                };
+
+            }]);
+    </script>
+
+</head>
+<body ng-app="filmApp" class="ng-cloak">
+<div class="container">
+    <div th:replace="fragments/header :: header"></div>
+    <div class="jumbotron" style="margin-top: 80px; background-color: #2e6da4"><h1 style="color: #ffffff">Lista Filmova</h1></div>
+</div>
+<div class="container" ng-controller="FilmController">
+    <table class="table table-bordered">
+        <thead>
+        <th>Naziv</th>
+        <th>Godina</th>
+        <th>Zanr</th>
+        <th>Ocena</th>
+        <th>Trajanje</th>
+        <th>Add/Edit Zanr</th>
+        <th>Edit Film</th>
+        <th>Delete</th>
+        </thead>
+
+        <tbody ng-repeat="film in filmovi">
+        <td>{{film.naziv}}</td>
+        <td>{{film.godina}}</td>
+        <td>{{film.zanr.naziv}}</td>
+        <td>{{film.ocena}}</td>
+        <td>{{film.trajanje}}</td>
+        <td>
+            <button class="btn btn-primary" ng-hide="editingZanr" ng-click="editingZanr = true">Add/Edit Zanr</button>
+            <form ng-show="editingZanr" ng-submit="editFilm(film);editingZanr = false;">
+                <div class="form-group">
+                    <label>Zanr :</label>
+                    <select class="form-control" ng-model="film.zanr"
+                            ng-options="zanr as zanr.naziv for zanr in zanrFilm"/>
+                </div>
+                <button class="btn btn-primary" type="submit">Save</button>
+            </form>
+
+        </td>
+        <td>
+            <button class="btn btn-primary" ng-hide="editing" ng-click="editing = true">Edit Film</button>
+            <form ng-show="editing" ng-submit="editFilm(film);editing = false;">
+                <div class="form-group">
+                    <label>Naziv:</label>
+                    <input class="form-control" type="text" ng-model="film.naziv" placeholder="Naziv"
+                           ng-required="true"/>
+                </div>
+                <div class="form-group">
+                    <label>Godina:</label>
+                    <input class="form-control" type="text" ng-model="film.godina" placeholder="Godina"
+                           ng-required="true"/>
+                </div>
+                <div class="form-group">
+                    <label>Ocena:</label>
+                    <input class="form-control" type="text" ng-model="film.ocena" placeholder="Ocena"
+                           ng-required="true"/>
+                </div>
+                <div class="form-group">
+                    <label>Trajanje :</label>
+                    <input class="form-control" type="text" ng-model="film.trajanje" placeholder="Trajanje"
+                           ng-required="true"/>
+                </div>
+                <div class="form-group">
+                    <label>Imdb:</label>
+                    <input class="form-control" type="text" ng-model="film.imdbLink" placeholder="Imdb"
+                           ng-required="true"/>
+                </div>
+
+                <div class="form-group">
+                    <label>Zanr :</label>
+                    <select class="form-control" ng-model="film.zanr"
+                            ng-options="zanr as zanr.naziv for zanr in zanrFilm"/>
+                </div>
+                <button class="btn btn-primary" type="submit">Save</button>
+
+            </form>
+        </td>
+
+        <td>
+            <button class="btn btn-danger" type="button" ng-click="deleteFilm(film.id)">Delete</button>
+        </td>
+        </tbody>
+    </table>
+
+    <button class="btn btn-lg btn-primary" type="button" data-toggle="modal" data-target="#add">Add</button>
+
+
+    <!-- Modal -->
+    <div id="add" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+
+            <!-- Modal content-->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Add Film</h4>
+                </div>
+                <div class="modal-body">
+                    <form ng-submit="newFilm()">
+                        <div class="form-group">
+                            <label>Naziv:</label>
+                            <input class="form-control" type="text" ng-model="filmNovi.nazivNovi"
+                                   placeholder="Naziv filma"
+                                   ng-required="true"/>
+                        </div>
+                        <div class="form-group">
+                            <label>Godina:</label>
+                            <input class="form-control" type="text" ng-model="filmNovi.godinaNovi" placeholder="Godina"
+                                   ng-required="true"/>
+                        </div>
+                        <div class="form-group">
+                            <label>Ocena:</label>
+                            <input class="form-control" type="text" ng-model="filmNovi.ocenaNovi"
+                                   placeholder="Ocena 1-10"
+                                   ng-required="true"/>
+                        </div>
+                        <div class="form-group">
+                            <label>Trajanje:</label>
+                            <input class="form-control" type="text" ng-model="filmNovi.trajanjeNovi"
+                                   placeholder="Trajanje"
+                                   ng-required="true"/>
+                        </div>
+                        <div class="form-group">
+                            <label>IMDB link:</label>
+                            <input class="form-control" type="text" ng-model="filmNovi.imdblinkNovi"
+                                   placeholder="IMDB link"
+                                   ng-required="true"/>
+                        </div>
+
+                        <button class="btn btn-default" type="submit">Save</button>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div th:replace="fragments/footer :: footer"></div>
+
+
+</body>
+</html>

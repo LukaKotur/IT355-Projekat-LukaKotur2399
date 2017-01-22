@@ -1,0 +1,79 @@
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Serija Search</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.1/angular.js"></script>
+    <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.6.1/angular-resource.js"></script>
+    <link rel="stylesheet" href="../static/bootstrap.css" th:href="@{/bootstrap.css}"/>
+
+    <script>
+        var serijaAppSearch = angular.module("filmAppSearch", ['ngResource']);
+
+        serijaAppSearch.controller("SerijaSearchController", ['$scope', '$resource',
+            function ($scope, $resource) {
+                $scope.searchSerija = function () {
+                    var nazivTemp = $scope.serijasearch.naziv;
+                    var SerijaSearchByTitle = $resource('/serija/findByNazivIgnoreCaseContaining');
+                    if (nazivTemp.length > 0) {
+                        $scope.searchresults = SerijaSearchByTitle.query({naziv: nazivTemp});
+                    }
+                    else {
+                        alert("Error: Search je prazan");
+                    }}
+
+            }]);
+
+    </script>
+
+</head>
+<body ng-app="filmAppSearch" class="ng-cloak">
+
+<div class="container">
+
+    <div th:replace="fragments/header :: header"></div>
+
+    <div ng-controller="SerijaSearchController" style="margin-top: 80px;">
+        <form ng-submit="searchSerija()">
+            <div class="input-group input-group-sm">
+                <input class="form-control" type="text" ng-model="serijasearch.naziv" placeholder="naziv filma"/>
+                <div class="input-group-btn">
+                    <button class="btn btn-default" type="submit">
+                        <i class="glyphicon glyphicon-search"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <div class="page-header"><h1>Search results:</h1></div>
+        <table class="table table-bordered" ng-hide="searchresults == null">
+            <thead>
+            <th>Naziv</th>
+            <th>Godina</th>
+            <th>Trajanje</th>
+            <th>Ocena</th>
+            <th>Zanr</th>
+            <th>Broj epizoda</th>
+            <th>IMDB Link</th>
+            </thead>
+            <tbody ng-repeat="serija in searchresults | orderBy :serija.naziv| limitTo:100">
+            <td>{{serija.naziv}}</td>
+            <td>{{serija.godina}}</td>
+            <td>{{serija.trajanje}}</td>
+            <td>{{serija.ocena}}</td>
+            <td>{{serija.zanr.naziv}}</td>
+            <td>{{serija.brojEpizoda}}</td>
+            <td><a ng-href="{{serija.imdbLink}}">
+                <div>{{serija.imdbLink.length>0 ? 'Pogledajte vise na IMDB' : ' Nije pronadjen IMDB link'}}</div>
+            </a></td>
+            </tbody>
+        </table>
+
+        <div class="text-danger" ng-show="searchresults.length == 0"><h1>Nema podataka o trazenoj seriji!</h1></div>
+
+
+    </div>
+</div>
+<div th:replace="fragments/footer :: footer"></div>
+
+
+</body>
+</html>

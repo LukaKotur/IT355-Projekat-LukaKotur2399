@@ -1,0 +1,110 @@
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Unosenje Zanra</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.1/angular.min.js"></script>
+    <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.6.1/angular-resource.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <link rel="stylesheet" href="../static/bootstrap.css" th:href="@{/bootstrap.css}"/>
+    <script src="../static/bootstrap.js" th:src="@{/bootstrap.js}"></script>
+
+    <script>
+        var zanrApp = angular.module("zanrApp", ['ngResource']);
+
+        zanrApp.controller("ZanrController", ['$scope', '$resource',
+            function ($scope, $resource) {
+                var Zanrovi = $resource('/zanrovi');
+
+                $scope.deleteZanr = function (id) {
+                    var DeleteZanr = $resource('/zanrovi/delete/' + id);
+                    DeleteZanr.delete(function (response) {
+                        $scope.message = response.message;
+                        location.reload();
+                    });
+                }
+
+
+                $scope.editZanr = function (idp, genretextp) {
+                    return $resource('/zanrovi/edit/:id/:naziv', null,
+                        {
+                            'update': {method: 'PUT'}
+                        }).update({id: idp, naziv: genretextp}, null);
+                }
+
+
+                $scope.newZanr = function () {
+                    var ZanrSave = $resource('/zanrovi/create/' + $scope.genrem);
+
+                    ZanrSave.save(function (response) {
+                        $scope.message = response.message;
+                        location.reload();
+                    });
+                }
+
+                Zanrovi.query(function (filmZanr) {
+                    $scope.filmZanr = filmZanr;
+                });
+            }]);
+
+    </script>
+</head>
+
+<body ng-app="zanrApp" class="ng-cloak">
+<!-- Default panel contents -->
+<div th:replace="fragments/header :: header"></div>
+<div style="margin-top: 80px"></div>
+<div class="container">
+    <div class="panel-heading"><span class="lead"> Lista Zanrova </span></div>
+    <div ng-controller="ZanrController">
+        <table class="table">
+            <thead>
+            <th>Naziv</th>
+            <th>Edit</th>
+            <th>Delete</th>
+            </thead>
+
+            <tbody ng-repeat="zanr in filmZanr">
+            <td>
+                {{zanr.naziv}}
+            </td>
+            <td>
+                <button class="btn btn-primary" ng-hide="editing" ng-click="editing = true">Edit</button>
+                <form ng-show="editing" ng-submit="editing = false">
+                    <div class="form-group">
+                        <label>Genre:</label>
+                        <input class="form-control" type="text" ng-model="zanr.naziv" placeholder="Naziv"
+                               ng-required="true"/>
+                    </div>
+                    <button class="btn" type="submit" ng-click="editZanr(zanr.id,zanr.naziv)">Save</button>
+                    <button class="btn" type="button" ng-click="deleteZanr(zanr.id)">X</button>
+                </form>
+            </td>
+            <td>
+                <button class="btn btn-danger" type="button" ng-click="deleteZanr(zanr.id)">Delete</button>
+            </td>
+            </tbody>
+        </table>
+
+
+        <form ng-show="visible" ng-submit="newZanr()" class="form-group">
+            <div class="form-group">
+                <label>Genre:</label>
+                <input class="form-control" type="text" ng-model="genrem" placeholder="Name"/>
+            </div>
+            <button class="btn btn-primary" ng-click="visible = false" type="submit">Save</button>
+        </form>
+
+    </div>
+</div>
+
+
+<div id="footer">
+    <div class="container">
+        <button class="btn btn-primary" ng-click="visible = true" type="button">Add</button>
+    </div>
+</div>
+
+<div th:replace="fragments/footer :: footer"></div>
+
+
+</body>
+</html>
